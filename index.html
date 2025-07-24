@@ -360,7 +360,6 @@
                 const users = this.getUsers();
                 const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
                 if (user) {
-                    // Use localStorage for persistent login
                     localStorage.setItem(this.SESSION_KEY, user.username);
                     return { success: true, user };
                 }
@@ -368,12 +367,10 @@
             },
 
             logout() {
-                // Use localStorage for persistent login
                 localStorage.removeItem(this.SESSION_KEY);
             },
 
             getCurrentUser() {
-                // Use localStorage for persistent login
                 const username = localStorage.getItem(this.SESSION_KEY);
                 if (!username) return null;
                 const users = this.getUsers();
@@ -382,15 +379,10 @@
 
             updateUser(username, newData) {
                 let users = this.getUsers();
-                let userFound = false;
-                users = users.map(user => {
-                    if (user.username === username) {
-                        userFound = true;
-                        return { ...user, ...newData };
-                    }
-                    return user;
-                });
-                if(userFound) {
+                const userIndex = users.findIndex(u => u.username === username);
+                if (userIndex > -1) {
+                    // This is a safer way to update the user object
+                    users[userIndex] = { ...users[userIndex], ...newData };
                     this.saveUsers(users);
                     return { success: true };
                 }
@@ -418,7 +410,8 @@
             saveQuizProgress(category, score, index) {
                 const currentUser = this.getCurrentUser();
                 if (currentUser) {
-                    const newProgress = { ...currentUser.progress, [category]: { score, index } };
+                    const progress = currentUser.progress || {};
+                    const newProgress = { ...progress, [category]: { score, index } };
                     this.updateUser(currentUser.username, { progress: newProgress });
                 }
             },
@@ -607,6 +600,8 @@
                 
                 AuthManager.saveOverallScore(this.score);
                 AuthManager.clearQuizProgress(this.category);
+                
+                restartBtn.dataset.category = this.category;
 
                 const percentage = this.score > 0 ? (this.score / this.currentQuizData.length) : 0;
                 finalScoreTextEl.textContent = `نتيجتك النهائية: ${this.score} من ${this.currentQuizData.length}`;
@@ -732,9 +727,11 @@
                 });
             });
             nextBtn.addEventListener('click', () => Quiz.showNextQuestion());
-            restartBtn.addEventListener('click', () => {
-                const currentCategory = Quiz.category;
-                Quiz.start(currentCategory);
+            restartBtn.addEventListener('click', (e) => {
+                const category = e.target.dataset.category;
+                if (category) {
+                    Quiz.start(category);
+                }
             });
             backToHomeBtn.addEventListener('click', () => Quiz.showScreen('sira-category-screen'));
             backToHomeBtnQuiz.addEventListener('click', () => Quiz.showScreen('sira-category-screen'));
