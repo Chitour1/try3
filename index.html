@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الألعاب التعليمية - السيرة النبوية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #0c1427;
+        }
+        .glass-container {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+        }
+        .game-card, .category-btn {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .game-card:hover, .category-btn:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: #d69e2e;
+        }
+        .option-btn {
+            transition: all 0.3s ease;
+            border-width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #f1f5f9;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #d69e2e;
+        }
+        .correct {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            border-color: #34d399 !important;
+        }
+        .incorrect {
+            background: linear-gradient(135deg, #f43f5e, #dc2626) !important;
+            color: white !important;
+            border-color: #fb7185 !important;
+        }
+        .gold-btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #f6e05e, #d69e2e);
+            color: #4a2c0f;
+            border: none;
+        }
+        .gold-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 7px 25px rgba(246, 224, 94, 0.3);
+        }
+        .fade-in { animation: fadeIn 0.7s ease-in-out; }
+        .fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        }
+        .gold-text {
+            background: -webkit-linear-gradient(#f6e05e, #d69e2e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .auth-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .auth-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #d69e2e;
+            border-color: #d69e2e;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 text-slate-100">
+
+    <!-- Audio Elements -->
+    <audio id="background-music" loop preload="auto"><source src="https://archive.org/download/brave-down.-com-1753087589/%5BBraveDown.Com%5D%20%5B%D9%85%D9%86%20%D8%B3%D9%8A%D8%B1%D8%A8%D8%AD%20%D8%A7%D9%84%D9%85%D9%84%D9%8A%D9%88%D9%86%20-%5D%20%5B1753087589%5D%20.mp3" type="audio/mpeg"></audio>
+    <audio id="correct-answer-music" preload="auto"><source src="https://archive.org/download/20250721_20250721_0941/%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%A8%20%D8%B5%D8%AD.mp3" type="audio/mpeg"></audio>
+    <audio id="incorrect-answer-music" preload="auto"><source src="https://archive.org/download/20250721_20250721_0941/%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%A8%20%D8%BA%D9%84%D8%B7.mp3" type="audio/mpeg"></audio>
+
+    <div id="app-container" class="w-full max-w-4xl">
+
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="glass-container p-6 md:p-10 rounded-3xl hidden">
+            <div id="login-form-container">
+                <h2 class="text-3xl font-bold text-center gold-text mb-6">تسجيل الدخول</h2>
+                <form id="login-form" class="space-y-4">
+                    <input type="text" id="login-username" placeholder="اسم المستخدم (انجليزي وأرقام)" class="auth-input w-full p-3 rounded-lg" required>
+                    <input type="password" id="login-password" placeholder="كلمة المرور" class="auth-input w-full p-3 rounded-lg" required>
+                    <button type="submit" class="gold-btn w-full font-bold py-3 px-8 rounded-lg">دخول</button>
+                </form>
+                <p id="login-error" class="text-red-400 text-center mt-4"></p>
+                <p class="text-center mt-4 text-slate-300">ليس لديك حساب؟ <button id="show-register-btn" class="font-bold text-yellow-400 hover:underline">سجل الآن</button></p>
+            </div>
+            <div id="register-form-container" class="hidden">
+                <h2 class="text-3xl font-bold text-center gold-text mb-6">إنشاء حساب جديد</h2>
+                <form id="register-form" class="space-y-4">
+                    <input type="text" id="register-username" placeholder="اسم المستخدم (انجليزي وأرقام فقط)" class="auth-input w-full p-3 rounded-lg" required pattern="[a-zA-Z0-9]+">
+                    <input type="text" id="register-name" placeholder="الاسم (أي لغة)" class="auth-input w-full p-3 rounded-lg" required>
+                    <input type="password" id="register-password" placeholder="كلمة المرور" class="auth-input w-full p-3 rounded-lg" required>
+                    <button type="submit" class="gold-btn w-full font-bold py-3 px-8 rounded-lg">تسجيل</button>
+                </form>
+                <p id="register-error" class="text-red-400 text-center mt-4"></p>
+                <p class="text-center mt-4 text-slate-300">لديك حساب بالفعل؟ <button id="show-login-btn" class="font-bold text-yellow-400 hover:underline">ادخل الآن</button></p>
+            </div>
+        </div>
+
+        <!-- Main Content (Portal & Quiz) -->
+        <div id="main-content" class="hidden">
+            <!-- Header for logged in user -->
+            <div id="main-header" class="flex justify-between items-center mb-6 p-4 glass-container rounded-2xl">
+                <div class="flex items-center gap-4">
+                    <span id="welcome-message" class="font-bold text-lg text-white"></span>
+                    <button id="profile-btn" title="الملف الشخصي" class="text-slate-300 hover:text-yellow-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
+                    <button id="admin-panel-btn" title="لوحة التحكم" class="hidden text-slate-300 hover:text-yellow-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></button>
+                </div>
+                <button id="logout-btn" class="bg-red-500/50 hover:bg-red-500/80 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>خروج</span>
+                </button>
+            </div>
+
+            <div id="portal-container" class="w-full glass-container p-6 md:p-10 rounded-3xl">
+                <!-- Portal Home Screen -->
+                <div id="portal-home" class="text-center fade-in">
+                     <h1 class="text-5xl md:text-6xl font-extrabold gold-text">بوابة الألعاب التعليمية</h1>
+                     <p class="text-slate-300 mt-4 text-lg max-w-2xl mx-auto">مرحباً بك في عالم المعرفة والمرح! اختر لعبتك المفضلة وانطلق في رحلة تعليمية فريدة.</p>
+                     <div class="flex justify-center mt-12">
+                        <div id="start-sira-game" class="game-card glass-container p-6 rounded-2xl flex flex-col items-center justify-center w-full max-w-xs">
+                            <div class="w-20 h-20 mb-4 flex items-center justify-center">
+                                <svg class="w-16 h-16 gold-text" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM8 11.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm8 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-4 5.5c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">السيرة النبوية</h3>
+                            <p class="text-sm text-slate-400 mt-1">اختبر معلوماتك</p>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- Sira Category Screen -->
+                <div id="sira-category-screen" class="hidden text-center">
+                    <div class="flex justify-start mb-8">
+                        <button id="back-to-portal-home" title="العودة" class="text-slate-300 hover:text-yellow-300 transition-colors p-2 rounded-full hover:bg-white/10">
+                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        </button>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-extrabold gold-text mb-10">اختر مرحلة</h2>
+                    <div class="space-y-6">
+                        <button data-category="all" class="category-btn w-full max-w-lg mx-auto glass-container p-6 rounded-2xl flex items-center justify-center text-2xl font-bold text-white">اختبار جميع الأسئلة</button>
+                        <button data-category="fihr" class="category-btn w-full max-w-lg mx-auto glass-container p-6 rounded-2xl flex items-center justify-center text-2xl font-bold text-white">من فهر بن مالك حتى حلف المطيبين</button>
+                        <button data-category="hilf_al_fudul" class="category-btn w-full max-w-lg mx-auto glass-container p-6 rounded-2xl flex items-center justify-center text-2xl font-bold text-white">من حلف الفضول إلى حمل آمنة</button>
+                        <button data-category="mawlidu" class="category-btn w-full max-w-lg mx-auto glass-container p-6 rounded-2xl flex items-center justify-center text-2xl font-bold text-white">مولده ﷺ إلى وفاة عبد المطلب</button>
+                    </div>
+                </div>
+
+                <!-- Quiz Container -->
+                <div id="quiz-content" class="hidden">
+                    <div id="quiz-header" class="text-center mb-8">
+                        <div class="flex justify-between items-center">
+                            <button id="back-to-home-btn-quiz" title="العودة للمراحل" class="text-slate-300 hover:text-yellow-300 transition-colors p-2 rounded-full hover:bg-white/10"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg></button>
+                            <h1 class="text-3xl md:text-4xl font-bold text-slate-100">السيرة النبوية</h1>
+                            <div class="w-8"></div>
+                        </div>
+                        <div class="w-full bg-black/20 rounded-full h-3 mt-6 overflow-hidden"><div id="progress-bar" class="bg-gradient-to-r from-yellow-400 to-amber-500 h-3 rounded-full transition-all duration-500 ease-out"></div></div>
+                        <div class="flex justify-between items-center mt-4">
+                             <div id="question-counter" class="text-sm font-semibold text-slate-300"></div>
+                             <div id="score-display" class="text-lg font-bold text-yellow-300">النتيجة: 0</div>
+                        </div>
+                    </div>
+                    <div id="question-area">
+                        <h2 id="question-text" class="text-2xl font-semibold text-white mb-6 text-center leading-relaxed"></h2>
+                        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    </div>
+                    <div id="feedback-area" class="mt-6 hidden">
+                         <p id="motivation-text" class="text-center text-xl font-semibold mb-4"></p>
+                        <div class="explanation p-4 rounded-lg border-r-4 border-yellow-500 bg-white/5">
+                            <h3 class="font-bold text-lg mb-2 text-slate-100">الإجابة النموذجية:</h3>
+                            <p id="explanation-text" class="text-slate-200 leading-loose"></p>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <button id="next-btn" class="gold-btn font-bold py-3 px-8 rounded-full hidden">السؤال التالي</button>
+                    </div>
+                    <div id="results-screen" class="hidden text-center">
+                        <h2 class="text-4xl font-bold gold-text mb-4">اكتمل الاختبار!</h2>
+                        <p id="final-score-text" class="text-2xl text-white my-4"></p>
+                        <p id="final-motivation-text" class="text-xl text-slate-200 font-semibold mb-8"></p>
+                        <div class="flex justify-center gap-4">
+                            <button id="restart-btn" class="gold-btn font-bold py-3 px-10 rounded-full">إعادة اللعبة</button>
+                            <button id="back-to-home-btn" class="bg-slate-700/50 text-white font-bold py-3 px-10 rounded-full hover:bg-slate-600/50">العودة للمراحل</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 hidden"></div>
+    
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="glass-container w-full max-w-lg p-6 rounded-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h2 class="text-2xl font-bold gold-text">الملف الشخصي</h2>
+                <button class="close-modal-btn text-slate-300 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <form id="profile-form" class="space-y-4">
+                <div>
+                    <label for="profile-name" class="block mb-2 text-sm font-medium text-slate-300">الاسم</label>
+                    <input type="text" id="profile-name" class="auth-input w-full p-3 rounded-lg">
+                </div>
+                <div>
+                    <label for="profile-password" class="block mb-2 text-sm font-medium text-slate-300">كلمة مرور جديدة (اتركه فارغاً لعدم التغيير)</label>
+                    <input type="password" id="profile-password" class="auth-input w-full p-3 rounded-lg">
+                </div>
+                <button type="submit" class="gold-btn w-full font-bold py-3 rounded-lg">حفظ التغييرات</button>
+            </form>
+             <p class="text-center mt-4 text-sm text-slate-400">ملاحظة: لا توجد طريقة لاسترجاع كلمة المرور إذا فقدتها.</p>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="admin-panel-modal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="glass-container w-full max-w-3xl max-h-[90vh] p-6 rounded-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h2 class="text-2xl font-bold gold-text">لوحة تحكم المسؤول</h2>
+                <button class="close-modal-btn text-slate-300 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <div class="overflow-y-auto">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-300 uppercase bg-white/5">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">اسم المستخدم</th>
+                                <th scope="col" class="px-6 py-3">الاسم</th>
+                                <th scope="col" class="px-6 py-3">كلمة المرور</th>
+                                <th scope="col" class="px-6 py-3">أعلى نتيجة</th>
+                                <th scope="col" class="px-6 py-3">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-table">
+                            <!-- User rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- All DOM Elements ---
+        const authScreen = document.getElementById('auth-screen');
+        const mainContent = document.getElementById('main-content');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const loginError = document.getElementById('login-error');
+        const registerError = document.getElementById('register-error');
+        const loginFormContainer = document.getElementById('login-form-container');
+        const registerFormContainer = document.getElementById('register-form-container');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const logoutBtn = document.getElementById('logout-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        const adminPanelBtn = document.getElementById('admin-panel-btn');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const profileModal = document.getElementById('profile-modal');
+        const adminPanelModal = document.getElementById('admin-panel-modal');
+        const profileForm = document.getElementById('profile-form');
+        const adminUsersTable = document.getElementById('admin-users-table');
+        const allModals = document.querySelectorAll('.fixed.z-50');
+        const closeModalsBtns = document.querySelectorAll('.close-modal-btn');
+
+        // Quiz DOM Elements
+        const portalHomeEl = document.getElementById('portal-home');
+        const siraCategoryScreenEl = document.getElementById('sira-category-screen');
+        const quizContentEl = document.getElementById('quiz-content');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainerEl = document.getElementById('options-container');
+        const feedbackAreaEl = document.getElementById('feedback-area');
+        const explanationTextEl = document.getElementById('explanation-text');
+        const motivationTextEl = document.getElementById('motivation-text');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const backToHomeBtn = document.getElementById('back-to-home-btn');
+        const backToHomeBtnQuiz = document.getElementById('back-to-home-btn-quiz');
+        const resultsScreenEl = document.getElementById('results-screen');
+        const finalScoreTextEl = document.getElementById('final-score-text');
+        const finalMotivationTextEl = document.getElementById('final-motivation-text');
+        const scoreDisplayEl = document.getElementById('score-display');
+        const progressBarEl = document.getElementById('progress-bar');
+        const questionCounterEl = document.getElementById('question-counter');
+        const startSiraGameBtn = document.getElementById('start-sira-game');
+        const backToPortalHomeBtn = document.getElementById('back-to-portal-home');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+
+        // Audio Elements
+        const backgroundMusicEl = document.getElementById('background-music');
+        const correctAnswerMusicEl = document.getElementById('correct-answer-music');
+        const incorrectAnswerMusicEl = document.getElementById('incorrect-answer-music');
+
+        // --- Auth & Data Manager ---
+        const AuthManager = {
+            DB_USERS: 'siraQuizUsers',
+            SESSION_KEY: 'siraQuizSession',
+
+            init() {
+                if (!localStorage.getItem(this.DB_USERS)) {
+                    const adminUser = {
+                        username: 'chitour1',
+                        name: 'admin',
+                        password: 'Ch@19883636',
+                        score: 0,
+                        isAdmin: true,
+                        progress: {}
+                    };
+                    localStorage.setItem(this.DB_USERS, JSON.stringify([adminUser]));
+                }
+            },
+
+            getUsers() {
+                return JSON.parse(localStorage.getItem(this.DB_USERS) || '[]');
+            },
+            saveUsers(users) {
+                localStorage.setItem(this.DB_USERS, JSON.stringify(users));
+            },
+
+            register(username, name, password) {
+                const users = this.getUsers();
+                if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+                    return { success: false, message: 'اسم المستخدم هذا مسجل بالفعل.' };
+                }
+                users.push({ username, name, password, score: 0, isAdmin: false, progress: {} });
+                this.saveUsers(users);
+                return { success: true };
+            },
+
+            login(username, password) {
+                const users = this.getUsers();
+                const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+                if (user) {
+                    // Use localStorage for persistent login
+                    localStorage.setItem(this.SESSION_KEY, user.username);
+                    return { success: true, user };
+                }
+                return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة.' };
+            },
+
+            logout() {
+                // Use localStorage for persistent login
+                localStorage.removeItem(this.SESSION_KEY);
+            },
+
+            getCurrentUser() {
+                // Use localStorage for persistent login
+                const username = localStorage.getItem(this.SESSION_KEY);
+                if (!username) return null;
+                const users = this.getUsers();
+                return users.find(u => u.username === username);
+            },
+
+            updateUser(username, newData) {
+                let users = this.getUsers();
+                let userFound = false;
+                users = users.map(user => {
+                    if (user.username === username) {
+                        userFound = true;
+                        return { ...user, ...newData };
+                    }
+                    return user;
+                });
+                if(userFound) {
+                    this.saveUsers(users);
+                    return { success: true };
+                }
+                return { success: false, message: "لم يتم العثور على المستخدم" };
+            },
+
+            deleteUser(username) {
+                let users = this.getUsers();
+                const initialLength = users.length;
+                users = users.filter(u => u.username !== username);
+                if (users.length < initialLength) {
+                    this.saveUsers(users);
+                    return { success: true };
+                }
+                return { success: false };
+            },
+
+            saveOverallScore(score) {
+                const currentUser = this.getCurrentUser();
+                if (currentUser && score > currentUser.score) {
+                    this.updateUser(currentUser.username, { score });
+                }
+            },
+            
+            saveQuizProgress(category, score, index) {
+                const currentUser = this.getCurrentUser();
+                if (currentUser) {
+                    const newProgress = { ...currentUser.progress, [category]: { score, index } };
+                    this.updateUser(currentUser.username, { progress: newProgress });
+                }
+            },
+
+            getQuizProgress(category) {
+                const currentUser = this.getCurrentUser();
+                return currentUser?.progress?.[category] || null;
+            },
+
+            clearQuizProgress(category) {
+                const currentUser = this.getCurrentUser();
+                if (currentUser && currentUser.progress && currentUser.progress[category]) {
+                    const newProgress = { ...currentUser.progress };
+                    delete newProgress[category];
+                    this.updateUser(currentUser.username, { progress: newProgress });
+                }
+            }
+        };
+
+        // --- UI Manager ---
+        const UIManager = {
+            showScreen(screenId) {
+                ['auth-screen', 'main-content'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+                document.getElementById(screenId).classList.remove('hidden');
+            },
+
+            updateUserUI(user) {
+                if (user) {
+                    welcomeMessage.textContent = `مرحباً، ${user.name}`;
+                    adminPanelBtn.classList.toggle('hidden', !user.isAdmin);
+                    this.showScreen('main-content');
+                } else {
+                    this.showScreen('auth-screen');
+                }
+            },
+
+            openModal(modalId) {
+                document.getElementById(modalId).classList.remove('hidden');
+                modalBackdrop.classList.remove('hidden');
+            },
+
+            closeAllModals() {
+                allModals.forEach(modal => modal.classList.add('hidden'));
+                modalBackdrop.classList.add('hidden');
+            },
+
+            renderAdminPanel() {
+                const users = AuthManager.getUsers();
+                adminUsersTable.innerHTML = '';
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-700';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-white">${user.username}</td>
+                        <td class="px-6 py-4 text-slate-300">${user.name}</td>
+                        <td class="px-6 py-4 text-slate-300">${user.password}</td>
+                        <td class="px-6 py-4 text-slate-300">${user.score}</td>
+                        <td class="px-6 py-4 space-x-2">
+                            <button data-username="${user.username}" class="admin-edit-user-btn font-medium text-blue-400 hover:underline">تعديل</button>
+                            ${!user.isAdmin ? `<button data-username="${user.username}" class="admin-delete-user-btn font-medium text-red-400 hover:underline">حذف</button>` : ''}
+                        </td>
+                    `;
+                    adminUsersTable.appendChild(row);
+                });
+            }
+        };
+
+        // --- Quiz Logic ---
+        const Quiz = {
+            fullQuizData: [
+                { question: "من هو فهر بن مالك؟", options: ["أحد أعمام النبي ﷺ", "من أنبياء بني إسرائيل", "أحد أجداد النبي ﷺ، واسمه الكامل فهر بن مالك بن النضر", "أحد ملوك اليمن من التبابعة"], correctAnswerIndex: 2, explanation: "قال أبو محمد عبد الملك بن هشام: \"محمد بن عبد الله بن عبد المطلب... بن غالب بن فهر بن مالك بن النضر...\" ثم قال: \"واسمه قريش، وإليه تنسب القبيلة... من جاوز فهرًا فليس من قريش.\"", category: 'fihr' },
+                { question: "اجتمعت بطونٌ من قريش على أمرٍ جامعٍ لنصرة المظلوم، فتعاقدوا على ذلك في دار رجلٍ منهم كان له شرفٌ وسنٌّ. ففي دار من كان ذلك الحلف؟", options: ["هاشم بن عبد مناف", "عبد الله بن جدعان التيمي", "عبد المطلب بن هاشم", "الوليد بن عتبة بن أبي سفيان"], correctAnswerIndex: 1, explanation: "قال ابن إسحاق: \"تداعت قبائل من قريش إلى حلف، فاجتمعوا له في دار عبد الله بن جدعان بن عمرو بن كعب بن سعد بن تيم بن مرة، لشرفه وسنه\".", category: 'hilf_al_fudul' },
+                { question: "تذكر كتب السير أن مولد النبي محمد صلى الله عليه وسلم كان في عام الفيل المشهور. ففي أي يوم، وكم مضى من شهر ربيع الأول، كانت تلك الولادة المباركة؟", options: ["يوم الجمعة، لأول ليلة من الشهر.", "يوم الاثنين، لاثنتي عشرة ليلة خلت من الشهر.", "يوم الخميس، للنصف من الشهر.", "يوم الأربعاء، لسبع وعشرين ليلة خلت من الشهر."], correctAnswerIndex: 1, explanation: "قال ابن إسحاق: \"ولد رسول الله صلى الله عليه وسلم يوم الاثنين، لاثنتي عشرة ليلة خلت من شهر ربيع الأول، عام الفيل\".", category: 'mawlidu' }
+            ],
+            motivationalMessages: {
+                correct: ["إجابة رائعة!", "أحسنت!", "ما شاء الله، معلومة دقيقة!"],
+                incorrect: ["لا بأس، كلنا نتعلم!", "معلومة جديدة لك!", "المحاولة القادمة أفضل."]
+            },
+            currentQuizData: [],
+            currentQuestionIndex: 0,
+            score: 0,
+            answered: false,
+            category: '',
+
+            start(category) {
+                this.category = category;
+                if (category === 'all') {
+                    this.currentQuizData = [...this.fullQuizData];
+                } else {
+                    this.currentQuizData = this.fullQuizData.filter(q => q.category === category);
+                }
+                if (this.currentQuizData.length === 0) {
+                    alert("لا توجد أسئلة في هذه المرحلة بعد.");
+                    return;
+                }
+                
+                const savedProgress = AuthManager.getQuizProgress(category);
+                if (savedProgress) {
+                    this.currentQuestionIndex = savedProgress.index;
+                    this.score = savedProgress.score;
+                } else {
+                    this.currentQuestionIndex = 0;
+                    this.score = 0;
+                }
+                
+                this.answered = false;
+                resultsScreenEl.classList.add('hidden');
+                document.getElementById('question-area').classList.remove('hidden');
+                document.getElementById('quiz-header').classList.remove('hidden');
+                
+                this.loadQuestion();
+            },
+
+            loadQuestion() {
+                if(this.currentQuestionIndex >= this.currentQuizData.length) {
+                    this.showResults();
+                    return;
+                }
+
+                this.answered = false;
+                feedbackAreaEl.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                const currentQuestion = this.currentQuizData[this.currentQuestionIndex];
+                questionTextEl.textContent = currentQuestion.question;
+                optionsContainerEl.innerHTML = '';
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'option-btn w-full p-4 text-lg rounded-lg font-semibold';
+                    button.dataset.index = index;
+                    button.addEventListener('click', (e) => this.selectAnswer(e));
+                    optionsContainerEl.appendChild(button);
+                });
+                this.updateProgress();
+            },
+
+            selectAnswer(e) {
+                if (this.answered) return;
+                this.answered = true;
+                const selectedButton = e.target;
+                const selectedAnswerIndex = parseInt(selectedButton.dataset.index);
+                const correctAnserIndex = this.currentQuizData[this.currentQuestionIndex].correctAnswerIndex;
+                
+                optionsContainerEl.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.disabled = true;
+                });
+
+                if (selectedAnswerIndex === correctAnserIndex) {
+                    this.score++;
+                    selectedButton.classList.add('correct');
+                    motivationTextEl.textContent = this.motivationalMessages.correct[Math.floor(Math.random() * this.motivationalMessages.correct.length)];
+                    motivationTextEl.className = 'text-center text-xl font-semibold mb-4 text-emerald-400';
+                    correctAnswerMusicEl.play().catch(()=>{});
+                } else {
+                    selectedButton.classList.add('incorrect');
+                    optionsContainerEl.querySelectorAll('.option-btn')[correctAnserIndex].classList.add('correct');
+                    motivationTextEl.textContent = this.motivationalMessages.incorrect[Math.floor(Math.random() * this.motivationalMessages.incorrect.length)];
+                    motivationTextEl.className = 'text-center text-xl font-semibold mb-4 text-rose-400';
+                    incorrectAnswerMusicEl.play().catch(()=>{});
+                }
+                
+                explanationTextEl.innerText = this.currentQuizData[this.currentQuestionIndex].explanation;
+                feedbackAreaEl.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+                this.updateProgress();
+            },
+
+            showNextQuestion() {
+                this.currentQuestionIndex++;
+                if (this.currentQuestionIndex < this.currentQuizData.length) {
+                    AuthManager.saveQuizProgress(this.category, this.score, this.currentQuestionIndex);
+                    this.loadQuestion();
+                } else {
+                    this.showResults();
+                }
+            },
+
+            showResults() {
+                document.getElementById('question-area').classList.add('hidden');
+                document.getElementById('quiz-header').classList.add('hidden');
+                feedbackAreaEl.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                resultsScreenEl.classList.remove('hidden');
+                
+                AuthManager.saveOverallScore(this.score);
+                AuthManager.clearQuizProgress(this.category);
+
+                const percentage = this.score > 0 ? (this.score / this.currentQuizData.length) : 0;
+                finalScoreTextEl.textContent = `نتيجتك النهائية: ${this.score} من ${this.currentQuizData.length}`;
+                
+                let motivation = "";
+                if (percentage >= 0.8) motivation = "ما شاء الله! معلوماتك في السيرة ممتازة!";
+                else if (percentage >= 0.5) motivation = "جيد جداً! استمر في التعلم والمراجعة.";
+                else motivation = "بداية موفقة! كل رحلة معرفية تبدأ بخطوة.";
+                finalMotivationTextEl.textContent = motivation;
+            },
+
+            updateProgress() {
+                scoreDisplayEl.textContent = `النتيجة: ${this.score}`;
+                const progressPercentage = this.currentQuizData.length > 0 ? ((this.currentQuestionIndex + 1) / this.currentQuizData.length) * 100 : 0;
+                progressBarEl.style.width = `${progressPercentage}%`;
+                questionCounterEl.textContent = `السؤال ${this.currentQuestionIndex + 1} / ${this.currentQuizData.length}`;
+            },
+
+            showScreen(screenId) {
+                ['portal-home', 'sira-category-screen', 'quiz-content'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+        };
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            // Auth
+            showRegisterBtn.addEventListener('click', () => {
+                loginFormContainer.classList.add('hidden');
+                registerFormContainer.classList.remove('hidden');
+            });
+            showLoginBtn.addEventListener('click', () => {
+                registerFormContainer.classList.add('hidden');
+                loginFormContainer.classList.remove('hidden');
+            });
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('register-username').value;
+                const name = document.getElementById('register-name').value;
+                const password = document.getElementById('register-password').value;
+                const result = AuthManager.register(username, name, password);
+                if (result.success) {
+                    alert('تم التسجيل بنجاح! يمكنك الآن تسجيل الدخول.');
+                    registerForm.reset();
+                    showLoginBtn.click();
+                } else {
+                    registerError.textContent = result.message;
+                }
+            });
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                const result = AuthManager.login(username, password);
+                if (result.success) {
+                    UIManager.updateUserUI(result.user);
+                } else {
+                    loginError.textContent = result.message;
+                }
+            });
+            logoutBtn.addEventListener('click', () => {
+                AuthManager.logout();
+                UIManager.updateUserUI(null);
+            });
+
+            // Modals
+            profileBtn.addEventListener('click', () => {
+                const user = AuthManager.getCurrentUser();
+                document.getElementById('profile-name').value = user.name;
+                document.getElementById('profile-password').value = '';
+                UIManager.openModal('profile-modal');
+            });
+            adminPanelBtn.addEventListener('click', () => {
+                UIManager.renderAdminPanel();
+                UIManager.openModal('admin-panel-modal');
+            });
+            modalBackdrop.addEventListener('click', UIManager.closeAllModals);
+            closeModalsBtns.forEach(btn => btn.addEventListener('click', UIManager.closeAllModals));
+            
+            // Profile Form
+            profileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const user = AuthManager.getCurrentUser();
+                const name = document.getElementById('profile-name').value;
+                const password = document.getElementById('profile-password').value;
+                const updateData = { name };
+                if (password) {
+                    updateData.password = password;
+                }
+                AuthManager.updateUser(user.username, updateData);
+                alert('تم تحديث الملف الشخصي بنجاح.');
+                UIManager.closeAllModals();
+                UIManager.updateUserUI(AuthManager.getCurrentUser());
+            });
+            
+            // Admin Panel
+            document.getElementById('admin-users-table').addEventListener('click', (e) => {
+                const username = e.target.dataset.username;
+                if (e.target.classList.contains('admin-delete-user-btn')) {
+                    if (confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) {
+                        AuthManager.deleteUser(username);
+                        UIManager.renderAdminPanel();
+                    }
+                }
+                if (e.target.classList.contains('admin-edit-user-btn')) {
+                    const newName = prompt(`أدخل الاسم الجديد للمستخدم ${username}:`);
+                    if (newName) {
+                        AuthManager.updateUser(username, { name: newName });
+                        UIManager.renderAdminPanel();
+                    }
+                }
+            });
+            
+            // Quiz Navigation
+            startSiraGameBtn.addEventListener('click', () => Quiz.showScreen('sira-category-screen'));
+            backToPortalHomeBtn.addEventListener('click', () => Quiz.showScreen('portal-home'));
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    Quiz.showScreen('quiz-content');
+                    Quiz.start(btn.dataset.category);
+                });
+            });
+            nextBtn.addEventListener('click', () => Quiz.showNextQuestion());
+            restartBtn.addEventListener('click', () => {
+                const currentCategory = Quiz.category;
+                Quiz.start(currentCategory);
+            });
+            backToHomeBtn.addEventListener('click', () => Quiz.showScreen('sira-category-screen'));
+            backToHomeBtnQuiz.addEventListener('click', () => Quiz.showScreen('sira-category-screen'));
+        }
+
+        // --- App Initialization ---
+        window.addEventListener('load', () => {
+            AuthManager.init();
+            setupEventListeners();
+            const currentUser = AuthManager.getCurrentUser();
+            UIManager.updateUserUI(currentUser);
+            if (currentUser) {
+                Quiz.showScreen('portal-home');
+            }
+        });
+    </script>
+</body>
+</html>
